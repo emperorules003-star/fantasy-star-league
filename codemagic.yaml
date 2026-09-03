@@ -1,37 +1,18 @@
 workflows:
-  fantasy-star-league-android:
-    name: Build Android APK
-    instance_type: linux
+  android:
+    name: Android Build
+    max_build_duration: 60
     environment:
-      node: 18
-      android_sdk: ">=34.0.0"
-      java: 17
-    triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: main
-          include: true
-          source: true
+      node: 16.20.2
+    cache:
+      cache_paths:
+        - node_modules
     scripts:
-      - name: Install dependencies
-        script: npm install
-      - name: Install Capacitor Android
-        script: |
-          if ! grep -q "@capacitor/android" package.json; then
-            npm install @capacitor/core @capacitor/android @capacitor/cli
-            npx cap init "Fantasy Star League" "com.fantasystarleague.app" --web-dir dist --no-web
-            npx cap add android
-          fi
-      - name: Build web app
-        script: npm run build
-      - name: Sync Capacitor
-        script: npx cap sync android
-      - name: Build debug APK
-        script: |
-          cd android
-          chmod +x gradlew
-          yes | sdkmanager --licenses
-          ./gradlew assembleDebug
+      - echo "Building Android APK..."
+      - if [ ! -d "node_modules" ]; then npm install --legacy-peer-deps; fi
+      - npm run build
+      - mkdir -p android/app/src/main/assets
+      - cp -r dist/* android/app/src/main/assets/
+      - cd android && ./gradlew assembleDebug
     artifacts:
       - android/app/build/outputs/apk/debug/app-debug.apk
