@@ -1,17 +1,51 @@
+# codemagic.yaml
 workflows:
-  android:
-    name: Android Build
+  android-apk:
+    name: Android Debug APK
     max_build_duration: 60
+    instance_type: linux_x2
     environment:
-      node: 16.20.2
+      node: 18
+      vars:
+        JAVA_VERSION: "17"
     scripts:
-      - echo "Building Android APK..."
-      - npm install
-      - npm install vite@4.5.3
-      - npm install rollup@3.29.4
-      - npm run build
-      - mkdir -p android/app/src/main/assets
-      - cp -r dist/* android/app/src/main/assets/
-      - cd android && ./gradlew assembleDebug
+      - name: Install dependencies
+        script: |
+          npm install
+
+      - name: Install Capacitor
+        script: |
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+
+      - name: Build web app
+        script: |
+          npm run build
+
+      - name: Initialize Capacitor (if needed)
+        script: |
+          if [ ! -f capacitor.config.ts ] && [ ! -f capacitor.config.json ]; then
+            npx cap init "Fantasy Star League" "com.fantasystarleague.app" --web-dir=dist
+          fi
+
+      - name: Add Android platform (if needed)
+        script: |
+          if [ ! -d android ]; then
+            npx cap add android
+          fi
+
+      - name: Sync web build to Android
+        script: |
+          npx cap sync android
+
+      - name: Accept Android SDK licenses
+        script: |
+          yes | sdkmanager --licenses || true
+
+      - name: Build debug APK
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
     artifacts:
       - android/app/build/outputs/apk/debug/app-debug.apk
