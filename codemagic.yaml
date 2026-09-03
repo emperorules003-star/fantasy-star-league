@@ -1,0 +1,12 @@
+workflows:
+  android:
+    name: Android Build
+    max_build_duration: 60
+    environment:
+      flutter: stable
+    scripts:
+      - echo "Building Android APK..."
+      - npm install
+      - npm run build
+    artifacts:
+      - build/**/outputs/**/*.apk
