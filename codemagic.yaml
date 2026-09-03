@@ -1,51 +1,37 @@
-# codemagic.yaml
 workflows:
-  android-apk:
-    name: Android Debug APK
-    max_build_duration: 60
-    instance_type: linux_x2
+  fantasy-star-league-android:
+    name: Build Android APK
+    instance_type: linux
     environment:
       node: 18
-      vars:
-        JAVA_VERSION: "17"
+      android_sdk: ">=34.0.0"
+      java: 17
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+          source: true
     scripts:
       - name: Install dependencies
+        script: npm install
+      - name: Install Capacitor Android
         script: |
-          npm install
-
-      - name: Install Capacitor
-        script: |
-          npm install @capacitor/core @capacitor/cli @capacitor/android
-
-      - name: Build web app
-        script: |
-          npm run build
-
-      - name: Initialize Capacitor (if needed)
-        script: |
-          if [ ! -f capacitor.config.ts ] && [ ! -f capacitor.config.json ]; then
-            npx cap init "Fantasy Star League" "com.fantasystarleague.app" --web-dir=dist
-          fi
-
-      - name: Add Android platform (if needed)
-        script: |
-          if [ ! -d android ]; then
+          if ! grep -q "@capacitor/android" package.json; then
+            npm install @capacitor/core @capacitor/android @capacitor/cli
+            npx cap init "Fantasy Star League" "com.fantasystarleague.app" --web-dir dist --no-web
             npx cap add android
           fi
-
-      - name: Sync web build to Android
-        script: |
-          npx cap sync android
-
-      - name: Accept Android SDK licenses
-        script: |
-          yes | sdkmanager --licenses || true
-
+      - name: Build web app
+        script: npm run build
+      - name: Sync Capacitor
+        script: npx cap sync android
       - name: Build debug APK
         script: |
           cd android
           chmod +x gradlew
+          yes | sdkmanager --licenses
           ./gradlew assembleDebug
-
     artifacts:
       - android/app/build/outputs/apk/debug/app-debug.apk
