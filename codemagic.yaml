@@ -3,10 +3,13 @@ workflows:
     name: Android Build
     max_build_duration: 60
     environment:
-      flutter: stable
+      node: 18
     scripts:
       - echo "Building Android APK..."
       - npm install
       - npm run build
+      - npx cap init FantasyStarLeague com.yourcompany.fantasystar
+      - npx cap add android
+      - cd android && ./gradlew assembleDebug
     artifacts:
-      - build/**/outputs/**/*.apk
+      - android/app/build/outputs/apk/debug/fantasy-star.apk
